@@ -278,6 +278,35 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
 #cNameWrap{width:100%; text-align:left}
 .count-dlg .dlg-foot{justify-content:center; padding-top:8px}
 .btn.big{padding:14px 26px; font-size:18px}
+.recent{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 8px; font-size:14px; color:var(--chalk-dim)}
+.recent button{min-width:52px; padding:8px 12px; border-radius:999px; border:1.5px solid var(--panel-line); background:var(--input-bg); color:var(--chalk); font:20px/1 var(--font-display); cursor:pointer}
+.recent button:hover{background:var(--chalk-faint)}
+.chip{border:0; border-radius:999px; padding:5px 12px; background:var(--chalk-faint); color:var(--chalk); font:inherit; cursor:pointer; white-space:nowrap}
+.chip:hover:not(:disabled){background:var(--chalk-dim); color:var(--board)}
+.chip:disabled{opacity:.6; cursor:default}
+
+/* 지구 멸망 (재미용) */
+.doom{position:fixed; inset:0; z-index:30; display:grid; place-items:center; overflow:hidden;
+  background:radial-gradient(circle at 50% 55%, #1b1440 0, #07060f 70%); color:#fff; font-family:var(--font-ui)}
+.doom .earth{position:absolute; left:50%; top:52%; font-size:min(34vmin,300px); line-height:1; transform:translate(-50%,-50%); transition:transform .5s cubic-bezier(.2,.9,.3,1.3), opacity .5s}
+.doom .meteor{position:absolute; left:50%; top:52%; font-size:min(16vmin,140px); line-height:1; transform:translate(60vw,-70vh) rotate(-20deg); opacity:0}
+.doom.go .meteor{opacity:1; animation:meteor 1.5s cubic-bezier(.55,0,.9,.45) forwards}
+@keyframes meteor{to{transform:translate(-50%,-50%) rotate(-20deg)}}
+.doom.go .earth{animation:quake .12s linear infinite}
+@keyframes quake{0%{transform:translate(-50%,-50%)}25%{transform:translate(-51%,-49%)}50%{transform:translate(-49%,-51%)}75%{transform:translate(-50.5%,-50.5%)}}
+.doom::after{content:""; position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none}
+.doom.hit::after{animation:flash .9s ease-out}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+.doom.hit .meteor{display:none}
+.doom.hit .earth{animation:none; transform:translate(-50%,-50%) scale(1.6)}
+.doom .msg{position:relative; z-index:1; display:grid; justify-items:center; gap:14px; padding:16px; text-align:center; opacity:0; transform:translateY(20px); transition:opacity .4s, transform .4s}
+.doom.end .msg{opacity:1; transform:none}
+.doom.end .earth{opacity:.22}
+.doom .msg b{font:clamp(54px,11vmin,120px)/1 var(--font-display); color:#ffd877; text-shadow:0 6px 0 #b8432f, 0 12px 30px rgba(0,0,0,.6)}
+.doom .msg span{font:700 clamp(28px,5.5vmin,56px)/1.1 var(--font-hand)}
+.doom .msg small{font:15px/1.4 var(--font-ui); color:rgba(255,255,255,.7)}
+.doom .msg .btn{background:#ffd877; color:#1c2a24; border-color:transparent}
+@media (prefers-reduced-motion:reduce){.doom.go .meteor,.doom.go .earth,.doom.hit::after{animation:none}}
 
 /* 좁은 화면, 세로 화면 */
 @media (max-width:760px), (max-aspect-ratio:4/5){
@@ -320,6 +349,7 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
     </h1>
     <div class="corner">
       <span id="today"></span>
+      <button type="button" class="chip" id="countChip" title="숫자를 새로 정하고 처음부터 뽑아요 (R)"></button>
       <label class="cls"><span class="sr">반 고르기</span><select id="classSel"></select><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></label>
     </div>
   </header>
@@ -330,7 +360,7 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
       <div class="slots" id="slots" data-n="1"></div>
       <div class="under">
         <p class="hint" id="hint"><kbd>스페이스바</kbd>나 아래 <b>뽑기</b> 버튼을 누르세요</p>
-        <p class="done" id="done" hidden>모두 한 번씩 뽑혔어요!<small>처음부터를 누르면 모두 다시 넣고 뽑아요.</small></p>
+        <p class="done" id="done" hidden>모두 한 번씩 뽑혔어요!<small>새로 시작을 누르면 숫자를 다시 정하고 뽑아요.</small></p>
       </div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </section>
@@ -374,8 +404,8 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
     <button type="button" class="tool" id="undoBtn" title="방금 뽑은 번호를 다시 넣어요 (Ctrl+Z)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>되돌리기
     </button>
-    <button type="button" class="tool" id="resetBtn" title="뽑힌 번호를 모두 다시 넣어요">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>처음부터
+    <button type="button" class="tool" id="resetBtn" title="숫자를 새로 정하고 처음부터 뽑아요 (R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>새로 시작
     </button>
     <button type="button" class="icon" id="soundBtn" aria-label="소리 끄기">
       <svg id="icoSoundOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
@@ -397,7 +427,7 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
       <h3>지금 고른 반</h3>
       <div class="row2">
         <label class="fld" for="fName"><span>반 이름</span><input id="fName" type="text" maxlength="20" autocomplete="off"></label>
-        <div class="fld"><span id="countLabel">인원</span>
+        <div class="fld"><span id="countLabel">몇 번까지</span>
           <div class="stepper" role="group" aria-labelledby="countLabel">
             <button type="button" id="fMinus" aria-label="한 명 줄이기">−</button>
             <input id="fCount" type="number" min="2" max="99" inputmode="numeric" aria-labelledby="countLabel">
@@ -421,11 +451,20 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
         <button type="button" role="radio" data-v="white">화이트보드</button>
       </div></div>
     </section>
+    <section class="dlg-sec">
+      <h3>재미 옵션</h3>
+      <p>지구 멸망 공을 하나 넣어 둬요. 이 공이 뽑히면 지구가 멸망하고 "오늘 수업 끝" 화면이 나와요. 진짜 번호는 줄지 않아요.</p>
+      <div><div class="seg" id="segDoom" role="radiogroup" aria-label="지구 멸망 공">
+        <button type="button" role="radio" data-v="off">안 넣기</button>
+        <button type="button" role="radio" data-v="on">지구 멸망 공 넣기</button>
+      </div></div>
+    </section>
     <section class="dlg-sec keys">
       <h3>키보드로 하기</h3>
       <dl>
         <dt>스페이스바, 엔터, →, PageDown</dt><dd>뽑기 (발표용 리모컨의 다음 버튼도 돼요)</dd>
         <dt>Ctrl + Z</dt><dd>되돌리기</dd>
+        <dt>R</dt><dd>새로 시작 (숫자 다시 정하기)</dd>
         <dt>1, 2</dt><dd>1명 뽑기, 2명 짝 뽑기</dd>
         <dt>F</dt><dd>전체 화면</dd>
         <dt>M</dt><dd>소리 켜기, 끄기</dd>
@@ -443,34 +482,35 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
         <circle cx="28" cy="13" r="10.5" fill="#47a6e6"/><circle cx="28" cy="13" r="5" fill="#fffdf5"/>
         <circle cx="44" cy="21" r="10.5" fill="#f2615d"/><circle cx="44" cy="21" r="5" fill="#fffdf5"/>
       </svg>
-      <h2 id="cTitle">몇 명이 참여하나요?</h2>
-      <p id="cSub">1번부터 적은 번호까지 공이 들어가요.</p>
+      <h2 id="cTitle">몇 번까지 넣을까요?</h2>
+      <p id="cSub">학생 수나 단어 수를 적어요. 1번부터 그 숫자까지 공이 들어가요.</p>
       <div class="big-step">
-        <button type="button" id="cMinus" aria-label="한 명 줄이기">−</button>
+        <button type="button" id="cMinus" aria-label="하나 줄이기">−</button>
         <input id="cInput" type="number" min="2" max="99" inputmode="numeric" placeholder="00" aria-labelledby="cTitle" autocomplete="off">
-        <span class="unit" aria-hidden="true">명</span>
-        <button type="button" id="cPlus" aria-label="한 명 늘리기">+</button>
+        <span class="unit" aria-hidden="true">번까지</span>
+        <button type="button" id="cPlus" aria-label="하나 늘리기">+</button>
       </div>
+      <div class="recent" id="cRecent" hidden></div>
       <p class="count-err" id="cErr" role="alert"></p>
       <label class="fld" id="cNameWrap" for="cName" hidden><span>반 이름 (적지 않아도 돼요)</span><input id="cName" type="text" maxlength="20" autocomplete="off"></label>
     </div>
     <div class="dlg-foot">
       <button type="button" class="btn" id="cCancel" hidden>취소</button>
-      <button type="submit" class="btn primary big">확정하고 시작</button>
+      <button type="submit" class="btn primary big">이 숫자로 시작</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="resetDlg" aria-labelledby="resetTitle">
-  <form method="dialog" class="dlg">
-    <div class="dlg-head"><h2 id="resetTitle">처음부터 다시 뽑을까요?</h2></div>
-    <div class="dlg-sec"><p id="resetMsg"></p></div>
-    <div class="dlg-foot">
-      <button class="btn" value="cancel">그대로 두기</button>
-      <button class="btn primary" value="ok">처음부터</button>
-    </div>
-  </form>
-</dialog>
+<div class="doom" id="doom" hidden role="alertdialog" aria-labelledby="doomTitle">
+  <div class="earth" id="doomEarth" aria-hidden="true">🌍</div>
+  <div class="meteor" aria-hidden="true">☄️</div>
+  <div class="msg">
+    <b id="doomTitle">지구 멸망!</b>
+    <span>오늘 수업 끝~ 🎉</span>
+    <small>…은 농담이에요. 번호는 그대로 남아 있어요.</small>
+    <button type="button" class="btn big" id="doomBack">지구 살리고 계속 뽑기</button>
+  </div>
+</div>
 
 <div class="sr" id="live" aria-live="polite"></div>
 
@@ -533,15 +573,19 @@ function load() {
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
 const S = load() || { classes: [makeClass('우리 반')], current: '', pick: 1, machine: 'lotto', sound: true, board: 'chalk' };
+// 페이지에 들어올 때마다 새로 시작한다 (전하영 님 11/1 요청).
+// 즐겨찾기로 다시 열어도 지난 뽑기는 지워지고, 숫자부터 정한다. 지난 숫자는 창에 미리 채워 둔다.
+// 반 이름, 이름 목록, 뽑는 방법, 소리, 칠판 색은 그대로 둔다.
 S.classes.forEach(c => {
   c.name = String(c.name || '우리 반');
-  c.confirmed = c.confirmed === true;
-  c.count = c.confirmed ? toInt(c.count, 2, 99, 28) : toInt(c.count, 0, 99, 0);
+  c.count = toInt(c.count, 0, 99, 0);
+  c.confirmed = false;
   c.names = Array.isArray(c.names) ? c.names.map(String) : [];
-  c.rounds = Array.isArray(c.rounds) ? c.rounds.filter(Array.isArray) : [];
-  c.away = Array.isArray(c.away) ? c.away : [];
-  if (c.awayDay !== dayKey()) { c.away = []; c.awayDay = dayKey(); } // 빠짐 표시는 그날만
+  c.rounds = [];
+  c.away = []; c.awayDay = dayKey();
 });
+S.recent = Array.isArray(S.recent) ? S.recent.map(n => toInt(n, 2, 99, 0)).filter(n => n >= 2).slice(0, 4) : [];
+S.doom = S.doom === true;
 if (!S.classes.some(c => c.id === S.current)) S.current = S.classes[0].id;
 if (S.pick !== 1 && S.pick !== 2) S.pick = 1;
 if (!['lotto', 'cannon', 'quick'].includes(S.machine)) S.machine = 'lotto';
@@ -570,7 +614,8 @@ const el = {
   classSel: $('#classSel'), today: $('#today'), live: $('#live'), cv: $('#fx'),
   setDlg: $('#setDlg'), fName: $('#fName'), fCount: $('#fCount'), fMinus: $('#fMinus'), fPlus: $('#fPlus'),
   fNames: $('#fNames'), fInfo: $('#fInfo'), fFit: $('#fFit'), addCls: $('#addCls'), delCls: $('#delCls'), segBoard: $('#segBoard'),
-  resetDlg: $('#resetDlg'), resetMsg: $('#resetMsg'),
+  countChip: $('#countChip'), cRecent: $('#cRecent'), segDoom: $('#segDoom'),
+  doom: $('#doom'), doomEarth: $('#doomEarth'), doomBack: $('#doomBack'),
   countDlg: $('#countDlg'), countForm: $('#countForm'), cTitle: $('#cTitle'), cInput: $('#cInput'), cMinus: $('#cMinus'), cPlus: $('#cPlus'),
   cErr: $('#cErr'), cNameWrap: $('#cNameWrap'), cName: $('#cName'), cCancel: $('#cCancel'),
 };
@@ -658,6 +703,7 @@ const Sound = (() => {
     },
     boom() { if (!on()) return; const t = ctx.currentTime; tone('sine', 160, 30, t, .75, .9, .005); noise(t, .5, .55, 'lowpass', 700); noise(t, .15, .3, 'highpass', 1800); },
     whistle(dur) { if (!on()) return; tone('sine', 1500, 450, ctx.currentTime, dur, .04, .08); },
+    rumble(dur) { if (!on()) return; const t = ctx.currentTime; tone('sine', 70, 38, t, dur, .5, dur * .7); noise(t, dur, .25, 'lowpass', 260, .7, dur * .7); },
     tick() { if (!on()) return; tone('square', 1300 + Math.random() * 200, 0, ctx.currentTime, .03, .035); },
     chime(i) {
       if (!on()) return; const t = ctx.currentTime + .01, k = i ? Math.pow(2, 4 / 12) : 1;
@@ -1162,22 +1208,24 @@ function setSeg(seg, v) { seg.querySelectorAll('button').forEach(b => b.setAttri
 function renderHeader() {
   const d = new Date();
   el.today.textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`;
-  el.classSel.innerHTML = S.classes.map(c => `<option value="${c.id}">${esc(c.name)} (${c.confirmed ? c.count + '명' : '인원 정하기'})</option>`).join('');
+  el.classSel.innerHTML = S.classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   el.classSel.value = S.current;
   el.classSel.disabled = busy;
+  el.countChip.textContent = cur().confirmed ? `1~${cur().count}번 · 바꾸기` : '숫자 정하기';
+  el.countChip.disabled = busy;
 }
 function renderTray() {
   const c = cur(), p = poolOf(c), a = awaySet(c).size;
   setSeg(el.segPick, S.pick); setSeg(el.segMachine, S.machine);
   document.querySelectorAll('.tray .seg button').forEach(b => { b.disabled = busy; });
   el.undo.disabled = busy || !c.rounds.length;
-  el.reset.disabled = busy || !c.rounds.length;
+  el.reset.disabled = busy;
   el.setBtn.disabled = busy;
   el.draw.disabled = busy;
   const out = c.confirmed && !p.length;
-  el.drawLabel.textContent = busy ? '뽑는 중' : (out ? '처음부터' : '뽑기');
+  el.drawLabel.textContent = busy ? '뽑는 중' : (out ? '새로 시작' : '뽑기');
   el.drawKey.hidden = busy || out;
-  el.left.textContent = `남은 ${p.length}명` + (a ? ` · 빠짐 ${a}명` : '');
+  el.left.textContent = `남은 공 ${p.length}개` + (a ? ` · 빠짐 ${a}개` : '');
   el.icoOn.hidden = !S.sound; el.icoOff.hidden = S.sound;
   el.sound.setAttribute('aria-label', S.sound ? '소리 끄기' : '소리 켜기');
   el.fs.setAttribute('aria-label', document.fullscreenElement ? '전체 화면 끝내기' : '전체 화면');
@@ -1224,6 +1272,8 @@ async function draw() {
   Sound.init(); keepAwake();
   const c = cur(), p = poolOf(c);
   if (!p.length) { openReset(); return; }
+  // 지구 멸망 공: 진짜 공들 사이에 하나 섞여 있다고 보고, 한 번 나오면 새로 시작할 때까지 다시 안 나온다
+  if (S.doom && !doomUsed && randInt(p.length + 1) === 0) { doomUsed = true; doomsday(); return; }
   const k = Math.min(S.pick, p.length), picks = pickSome(p, k);
   c.rounds.push(picks); save();
   busy = true; stock = p.length;
@@ -1259,18 +1309,42 @@ function undo() {
   buildSlots(); Lotto.sync(poolOf()); renderAll();
   toast(`${r.join(', ')}번을 다시 넣었어요`);
 }
+// 새로 시작 = 숫자부터 다시 정한다. 취소하면 지금 뽑던 그대로 둔다.
 function openReset() {
   if (busy) return;
-  const n = drawnSet().size, a = awaySet().size;
-  el.resetMsg.textContent = `지금까지 뽑힌 ${n}명을 모두 다시 넣고 처음부터 뽑아요.` + (a ? ` 오늘 빠짐 표시한 ${a}명은 그대로 빠져 있어요.` : '');
-  el.resetDlg.returnValue = '';
-  el.resetDlg.showModal();
+  openCount('reset');
 }
-function doReset() {
-  const c = cur(); c.rounds = []; save();
-  buildSlots(); Lotto.sync(poolOf()); renderAll();
-  toast('모두 다시 넣었어요. 처음부터 뽑아요');
+
+/* ---------- 지구 멸망 (재미용) ---------- */
+let doomUsed = false;
+async function doomsday() {
+  busy = true; document.body.classList.add('busy'); renderTray();
+  if (S.machine === 'lotto') { Lotto.mixTarget = 1; Sound.airStart(); await wait(calm() ? .4 : 1.3); Lotto.mixTarget = 0; Sound.airStop(); }
+  el.doomEarth.textContent = '🌍';
+  el.doom.className = 'doom'; el.doom.hidden = false;
+  Sound.rumble(calm() ? .3 : 1.5);
+  void el.doom.offsetWidth; el.doom.classList.add('go');
+  await wait(calm() ? .3 : 1.5);
+  el.doom.classList.add('hit'); el.doomEarth.textContent = '💥';
+  Sound.boom(); setTimeout(() => Sound.boom(), 180);
+  confetti(W / 2, H * .52, Math.min(W, H) * .2); sparks(W / 2, H * .52, calm() ? 10 : 60, 520);
+  await wait(.7);
+  el.doom.classList.add('end'); Sound.tada();
+  say('지구 멸망! 오늘 수업 끝. 농담이에요');
+  setTimeout(() => el.doomBack.focus(), 50);
 }
+function endDoom() {
+  if (el.doom.hidden) return;
+  el.doom.hidden = true; el.doom.className = 'doom';
+  busy = false; document.body.classList.remove('busy');
+  renderAll(); toast('지구를 살렸어요. 계속 뽑아요');
+}
+el.doomBack.addEventListener('click', endDoom);
+el.segDoom.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  S.doom = b.dataset.v === 'on'; save(); setSeg(el.segDoom, S.doom ? 'on' : 'off');
+  toast(S.doom ? '지구 멸망 공을 넣었어요. 언젠가 나와요' : '지구 멸망 공을 뺐어요');
+});
 function setPick(n) {
   if (busy || S.pick === n) return;
   S.pick = n; save(); buildSlots(); renderAll();
@@ -1324,12 +1398,17 @@ el.classSel.addEventListener('change', () => {
   S.current = el.classSel.value; save(); refreshClass(); el.classSel.blur();
   if (!cur().confirmed) openCount('first');
 });
-el.resetDlg.addEventListener('close', () => { if (el.resetDlg.returnValue === 'ok') doReset(); });
+// 창을 닫으면 초점이 설정 버튼에 돌아와 스페이스바가 안 먹으므로 풀어 준다
+el.setDlg.addEventListener('close', () => { if (document.activeElement) document.activeElement.blur(); });
+el.countChip.addEventListener('click', () => { if (!busy) openCount(cur().confirmed ? 'reset' : 'first'); });
+// 뒤로 가기·즐겨찾기로 돌아왔을 때 브라우저가 예전 화면을 그대로 꺼내 오면 새로 연다
+addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
 document.addEventListener('fullscreenchange', renderTray);
 // 마우스로 누른 버튼에 초점이 남으면 스페이스바가 그 버튼을 다시 누르게 되므로 풀어 준다
 document.addEventListener('click', e => { const b = e.target.closest('button'); if (b && e.detail > 0 && !b.closest('dialog')) b.blur(); });
 
 addEventListener('keydown', e => {
+  if (!el.doom.hidden) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); if (el.doom.classList.contains('end')) endDoom(); } return; }
   if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
   const t = e.target;
   if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
@@ -1342,6 +1421,7 @@ addEventListener('keydown', e => {
   }
   if (k === 'f' || k === 'F' || k === 'ㄹ') { toggleFull(); return; }
   if (k === 'm' || k === 'M' || k === 'ㅡ') { toggleSound(); return; }
+  if (k === 'r' || k === 'R' || k === 'ㄱ') { openReset(); return; }
   if (k === '1') setPick(1);
   if (k === '2') setPick(2);
 });
@@ -1354,6 +1434,7 @@ function fillSettings() {
   el.fNames.value = c.names.join('\n').replace(/\n+$/, '');
   el.delCls.disabled = S.classes.length < 2; el.delCls.textContent = '이 반 지우기'; delArmed = false;
   setSeg(el.segBoard, S.board === 'white' ? 'white' : 'chalk');
+  setSeg(el.segDoom, S.doom ? 'on' : 'off');
   namesInfo();
 }
 function namesInfo() {
@@ -1361,8 +1442,8 @@ function namesInfo() {
   el.fFit.hidden = true;
   if (!lines) el.fInfo.textContent = '이름을 적으면 뽑힌 번호 아래에 이름이 나와요.';
   else if (lines > c.count) {
-    el.fInfo.textContent = `이름이 ${lines}줄이라 인원(${c.count}명)보다 많아요. ${c.count + 1}번부터는 뽑히지 않아요.`;
-    el.fFit.hidden = false; el.fFit.textContent = `인원을 ${Math.min(99, lines)}명으로`;
+    el.fInfo.textContent = `이름이 ${lines}줄이라 숫자(${c.count}번까지)보다 많아요. ${c.count + 1}번부터는 뽑히지 않아요.`;
+    el.fFit.hidden = false; el.fFit.textContent = `${Math.min(99, lines)}번까지로`;
   } else el.fInfo.textContent = `${filled}명 이름이 들어갔어요. 첫 줄이 1번이에요.`;
 }
 function setCount(n) {
@@ -1395,11 +1476,15 @@ let countMode = 'first', prevClassId = null;
 function openCount(mode) {
   countMode = mode;
   const c = cur(), isNew = mode === 'new';
-  el.cTitle.textContent = isNew ? '새 반은 몇 명인가요?' : '몇 명이 참여하나요?';
+  el.cTitle.textContent = isNew ? '새 반은 몇 번까지인가요?' : mode === 'reset' ? '새로 시작해요. 몇 번까지?' : '몇 번까지 넣을까요?';
   el.cInput.value = c.count >= 2 ? c.count : '';
   el.cErr.textContent = '';
   el.cNameWrap.hidden = !isNew; el.cName.value = ''; el.cName.placeholder = c.name;
-  el.cCancel.hidden = !isNew;
+  el.cCancel.hidden = mode === 'first';
+  el.cCancel.textContent = mode === 'reset' ? '그대로 계속 뽑기' : '취소';
+
+  el.cRecent.hidden = !S.recent.length;
+  el.cRecent.innerHTML = S.recent.length ? '최근 숫자 ' + S.recent.map(n => `<button type="button" data-v="${n}" aria-label="${n}번까지로 바로 시작">${n}</button>`).join('') : '';
   if (!el.countDlg.open) el.countDlg.showModal();
   setTimeout(() => { el.cInput.focus(); el.cInput.select(); }, 30);
 }
@@ -1411,26 +1496,34 @@ function stepCount(d) {
 el.cMinus.addEventListener('click', () => stepCount(-1));
 el.cPlus.addEventListener('click', () => stepCount(1));
 el.cInput.addEventListener('input', () => { el.cErr.textContent = ''; });
+// 최근 숫자를 누르면 그 숫자로 바로 시작
+el.cRecent.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  el.cInput.value = b.dataset.v;
+  if (el.countForm.requestSubmit) el.countForm.requestSubmit(); else el.countForm.dispatchEvent(new Event('submit', { cancelable: true }));
+});
 el.countForm.addEventListener('submit', e => {
   e.preventDefault();
   const v = Number(el.cInput.value);
   if (!Number.isInteger(v) || v < 2 || v > 99) {
-    el.cErr.textContent = el.cInput.value === '' ? '참여하는 사람 수를 적어 주세요.' : '2명부터 99명까지 정할 수 있어요.';
+    el.cErr.textContent = el.cInput.value === '' ? '몇 번까지 넣을지 숫자를 적어 주세요.' : '2부터 99까지 정할 수 있어요.';
     el.cInput.focus(); el.cInput.select(); return;
   }
   const c = cur();
   c.count = v; c.confirmed = true;
+  c.rounds = []; c.away = []; c.awayDay = dayKey(); doomUsed = false; // 숫자를 정하면 언제나 처음부터
+  S.recent = [v].concat(S.recent.filter(n => n !== v)).slice(0, 4);
   if (countMode === 'new' && el.cName.value.trim()) c.name = el.cName.value.trim();
   save(); el.countDlg.close();
   Sound.init();
   // 빈 통에 공이 위에서 하나씩 쏟아져 들어간다
   Lotto.setSize(v); Lotto.rebuild([]); Lotto.sync(poolOf());
   buildSlots(); showLast(); renderAll();
-  toast(`${v}명으로 정했어요. 인원은 설정에서 바꿀 수 있어요`);
+  toast(`1번부터 ${v}번까지 넣었어요. 숫자를 바꾸려면 새로 시작을 누르세요`);
 });
 el.cCancel.addEventListener('click', () => el.countDlg.close());
 // 처음 정할 때는 Esc로 닫히지 않는다. 그래도 닫히면 다시 연다.
-el.countDlg.addEventListener('cancel', e => { if (countMode !== 'new') e.preventDefault(); });
+el.countDlg.addEventListener('cancel', e => { if (countMode === 'first') e.preventDefault(); });
 el.countDlg.addEventListener('close', () => {
   if (cur().confirmed) return;
   if (countMode === 'new') {
