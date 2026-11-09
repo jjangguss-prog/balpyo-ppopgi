@@ -23,6 +23,7 @@
 - **재미 옵션: 지구 멸망 공** (설정, 기본은 꺼짐). 뽑히면 운석이 떨어져 지구가 터지고 "오늘 수업 끝~" 화면이 나와요. 진짜 번호는 줄지 않아요.
   - 여러 컷으로 이어지는 약 30초짜리 영상이에요: 심우주, 각국 관제실 분할 화면, 대기권 진입, 창동중학교 폭발, 지구 붕괴, 여러 타임라인의 반응. 화면을 누르거나 Enter를 치면 마지막 장면으로 건너뛰어요.
   - 설정에서 학교 사진을 넣으면 그림 대신 그 사진이 터져요. 사진은 그 브라우저에만 저장돼요.
+  - 소리는 실제 녹음한 효과음(우주왕복선 발사 굉음, 공습 사이렌, 폭발, 합창 등)을 컷마다 맞춰 섞었어요. 마지막 화면에서는 학교종이 "딩동댕동" 울려요. 화면 움직임 줄이기를 켠 컴퓨터에서는 예전처럼 코드로 만든 효과음이 나와요.
 
 ## 키보드
 
@@ -38,4 +39,18 @@
 ## 알아 둘 것
 
 - 뽑은 기록과 이름은 **그 컴퓨터의 브라우저에만** 저장돼요. 어디에도 전송되지 않아요. 다른 컴퓨터나 브라우저에서 열면 새로 시작해요.
-- `index.html` 파일 하나로 되어 있어서, 내려받아 더블클릭해도 인터넷 없이 돌아가요(글꼴만 기본 글꼴로 바뀝니다).
+- `index.html` 파일 하나로 되어 있어서, 내려받아 더블클릭해도 인터넷 없이 돌아가요(글꼴만 기본 글꼴로 바뀝니다). 지구 멸망 소리도 파일 안에 들어 있어요.
+
+## 소리 출처
+
+지구 멸망 공 영상의 소리는 [Freesound](https://freesound.org)의 무료 녹음을 잘라 크기를 바꾸고 서로 섞어 만들었어요(원본에서 바꿈). 대부분 CC0(누구나 자유롭게 씀)이고, 아래 8개는 CC BY라 출처를 밝혀요.
+
+- "Static Burst 1", "Static Burst 2" by SilverIllusionist, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — https://freesound.org/people/SilverIllusionist/sounds/696593 , https://freesound.org/people/SilverIllusionist/sounds/696594
+- "Large Earthquake" by LoafDV, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — https://freesound.org/people/LoafDV/sounds/148002
+- "Large, Low Rumble.wav" by duckduckpony, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — https://freesound.org/people/duckduckpony/sounds/130972
+- "Rocks - Crumbling / Falling - Designed Rocks" by GregorQuendel, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — https://freesound.org/people/GregorQuendel/sounds/555048
+- "Movie Trailer Boom" by hykenfreak, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — https://freesound.org/people/hykenfreak/sounds/207755
+- "Risers - Horror Whooshes Tension Builder 1.mp3" by original_sound, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) — https://freesound.org/people/original_sound/sounds/494981
+- "Large Dinosaur Roar" by BESTROFLMAN, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) — https://freesound.org/people/BESTROFLMAN/sounds/212433
+
+CC0 소리: spacedrone3(Elektrocell), Braam·Big Boom(unfa), WHOOSH-HIT-BRAAM 2(vykroft), Clock ticks close to mic(BonnyOrbit), Red Alert Klaxon·Micheal Bay Hit(Kinoton), shuttlelaunch(klangfabrik), Woosh_Low_02·04·05(moogy73), air raid siren(mrrap4food), Single Heartbeat Clean(Lunardrive), massive explosion(Hugofski), Huge Distant Explosion(Fission9), window break glass shatter(kyles), Slow Motion Glass Shatter(bevibeldesign), Gravel Stone Dirt Debris Falling(Sheyvan), PaulAmicusMeusSection, Taiko Drums(WelvynZPorterSamples), λόγος Timpani(Stereo Surgeon), Walkie Talkie - Roger Beep(bruce965), Robot beep(soundsofscienceupf), electronicchimes(guitarguy1985).
