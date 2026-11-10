@@ -489,7 +489,7 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
         <button type="button" role="radio" data-v="off">안 넣기</button>
         <button type="button" role="radio" data-v="on">지구 멸망 공 넣기</button>
       </div></div>
-      <p>지구 멸망 장면에서 창동중학교가 터져요. 학교 사진을 넣으면 그림 대신 그 사진이 터져요. 사진은 이 컴퓨터에만 저장돼요.</p>
+      <p>지구 멸망 장면에서 창동중학교가 터져요. 학교 사진을 넣으면 AI 영상 대신 그 사진이 터져요. 사진은 이 컴퓨터에만 저장돼요.</p>
       <p>지구 멸망 소리는 Freesound의 무료 녹음(CC0·CC BY)을 섞어 만들었어요. <a href="https://github.com/jjangguss-prog/balpyo-ppopgi#소리-출처" target="_blank" rel="noopener">소리 출처 보기</a></p>
       <div class="row-actions"><label class="btn small" for="schoolFile" style="cursor:pointer">학교 사진 고르기</label><input type="file" id="schoolFile" accept="image/*" hidden><button type="button" class="btn small" id="schoolClear" hidden>사진 빼기</button><span class="info" id="schoolInfo"></span></div>
     </section>
@@ -1650,6 +1650,7 @@ const Doom = (() => {
     }
   }
   function build() {
+    if (!calm()) loadClips();
     if (built) return Promise.resolve();
     if (building) return building;
     tex = new Uint8ClampedArray(TW * TH * 3); cloud = new Uint8ClampedArray(TW * TH); lights = new Uint8ClampedArray(TW * TH);
@@ -1935,6 +1936,7 @@ const Doom = (() => {
     if (name === 'boom') onBoom();
     if (name === 'after') afterSeg = -1;
     if (name === 'final' && shAt < 0) { shAt = T - 1.6; onShatter(); }
+    clipPrep(shots[si + 1]);
   }
 
   /* ---- 장면 ---- */
@@ -2503,6 +2505,96 @@ const Doom = (() => {
     }
   }
 
+  /* ---- AI 영상 컷 ----
+     대기권 진입·학교 폭발·지구 붕괴는 이 PC에서 AI(첫 그림 FLUX.2 klein·Z-Image → 영상 Wan 2.2)로 뽑은 5초짜리 영상을 쓴다.
+     영상은 doom 폴더에 따로 두고 지구 멸망 공을 켰을 때만 받는다. 못 받으면(파일 하나만 들고 다닐 때 등) 코드로 그린 장면이 나온다.
+     화면 시간 T는 녹음 소리에 맞춰 가므로, 영상도 T에서 계산한 시각을 따라가게 한다(0.2초 넘게 벌어지면 맞춤). */
+  const CLIP_SRC = { entry: 'doom/entry.mp4', school: 'doom/school.mp4', shatter: 'doom/shatter.mp4' };
+  // 컷 이름: [영상, 영상 시작초, 끝초, 확대 처음, 확대 끝, 가운데 둘 곳 x, y(0~1)]
+  const CLIP_PLAN = {
+    limb: ['entry', .6, 2.9, 1, 1.08, .5, .5],
+    face: ['entry', 2.9, 3.5, 1.6, 1.75, .6, .42],      // 같은 영상을 운석 쪽으로 크게 당겨 클로즈업처럼
+    eye: ['entry', 3.5, 5, 1.12, 1.28, .6, .5],
+    school: ['school', .1, 1.5, 1, 1.06, .5, .45],
+    boom: ['school', 1.75, 4.75, 1.04, 1.12, .45, .55],
+    shatter: ['shatter', .2, 5, 1, 1.1, .5, .45]
+  };
+  const clips = {};
+  let clipsLoading = null, clipNow = null, clipsOn = false, clipLast = null;
+  function loadClips() {
+    if (clipsLoading) return clipsLoading;
+    clipsLoading = Promise.all(Object.entries(CLIP_SRC).map(async ([id, url]) => {
+      const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+      const inl = document.getElementById('doomClip-' + id);   // 파일 하나짜리 판(드라이브용)은 영상이 파일 안에 들어 있다
+      if (inl) { const b = atob(inl.textContent.trim()), u8 = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u8[i] = b.charCodeAt(i); v.src = URL.createObjectURL(new Blob([u8], { type: 'video/mp4' })); }
+      else if (location.protocol === 'file:') v.src = url;   // 파일로 열면 fetch가 막히니 옆 doom 폴더 주소를 바로 준다
+      else try { const r = await fetch(url); if (!r.ok) throw new Error(r.status); v.src = URL.createObjectURL(await r.blob()); }
+      catch (e) { v.src = url; }
+      const ok = await new Promise(res => {
+        const to = setTimeout(() => res(false), 30000);
+        v.addEventListener('loadeddata', () => { clearTimeout(to); res(true); }, { once: true });
+        v.addEventListener('error', () => { clearTimeout(to); res(false); }, { once: true });
+        v.load();
+      });
+      if (ok) clips[id] = v;
+    })).then(() => {
+      const n = Object.keys(clips).length;
+      if (!n) clipsLoading = null;   // 하나도 못 받았으면 다음에 다시 시도
+      return n;
+    });
+    return clipsLoading;
+  }
+  const sloMo = st => st < .5 ? st / .3 : .5 / .3 + st - .5;   // 지구가 깨질 때 화면이 0.3배로 느려지는 것을 실제 시간으로 되돌림
+  function clipFor(name) {
+    const p = clipsOn && CLIP_PLAN[name];
+    if (!p || ((name === 'school' || name === 'boom') && photo)) return null;   // 학교 사진을 넣었으면 그 사진이 터지는 코드 장면
+    const v = clips[p[0]];
+    return v ? { p, v } : null;
+  }
+  function clipPrep(sh) {   // 다음 컷이 영상이면 미리 그 시각에 맞춰 둔다(컷이 바뀔 때 멈칫하지 않게)
+    const c = sh && clipFor(sh.name), now = shots[si] && clipFor(shots[si].name);
+    if (!c || c.v === clipNow || (now && now.v === c.v)) return;   // 지금 컷이 같은 영상을 이어 쓰면 건드리지 않는다
+    c.v.pause(); c.v.currentTime = c.p[1];
+  }
+  function clipStop() {
+    Object.values(clips).forEach(v => { if (!v.paused) v.pause(); });
+    clipNow = null;
+  }
+  function clipShot(name, st, dur, u) {
+    const c = clipFor(name);
+    if (!c) { if (clipNow) { clipNow.pause(); clipNow = null; } return false; }
+    const { p, v } = c, slow = name === 'shatter';
+    const wt = slow ? sloMo(st) : st, wd = slow ? sloMo(dur) : dur, f = c01(wt / wd);
+    const t = p[1] + (p[2] - p[1]) * f, rate = (p[2] - p[1]) / wd;
+    if (clipNow && clipNow !== v) clipNow.pause();
+    clipNow = v;
+    if (Math.abs(v.playbackRate - rate) > .01) v.playbackRate = rate;
+    if (v.paused || v.ended) { if (Math.abs(v.currentTime - t) > .06) v.currentTime = t; if (f < 1) v.play().catch(() => {}); }
+    else if (Math.abs(v.currentTime - t) > .2) v.currentTime = t;
+    const vw = v.videoWidth || 1280, vh = v.videoHeight || 704;
+    let src = v;
+    if (v.readyState >= 2) {   // 마지막 장면을 작게 남겨 둔다: 영상이 시각을 맞추는 동안 빈 화면 대신 보여 줌
+      if (!clipLast) clipLast = new Map();
+      let lc = clipLast.get(v);
+      if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(v, lc); }
+      lc.getContext('2d').drawImage(v, 0, 0, 640, 352);
+    } else if (clipLast && clipLast.get(v)) src = clipLast.get(v); else return true;
+    const z = (p[3] + (p[4] - p[3]) * f) * 1.05;   // 흔들려도 가장자리가 안 보이게 조금 더 크게
+    const sc = Math.max(w / vw, h / vh) * z, dw = vw * sc, dh = vh * sc;
+    const x = Math.min(0, Math.max(w - dw, w / 2 - p[5] * dw + sx)), y = Math.min(0, Math.max(h - dh, h / 2 - p[6] * dh + sy));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.drawImage(src, x, y, dw, dh);
+    // 흔들림·번쩍임은 코드 장면과 같은 박자로
+    if (name === 'limb') shake = Math.max(shake, .12 + .3 * u);
+    if (name === 'face') shake = Math.max(shake, .6);
+    if (name === 'eye') { shake = Math.max(shake, .5 + .6 * u); const wu = c01((u - .65) / .35); flash = Math.max(flash, wu * wu * .9); flashRGB = '255,240,215'; }
+    if (name === 'school') { shake = Math.max(shake, .15 + .6 * u); const wu = c01((u - .82) / .18); flash = Math.max(flash, wu * wu * .95); flashRGB = '255,244,225'; }
+    if (name === 'boom') shake = Math.max(shake, 1 - u * .5);
+    root.dataset.clip = p[0];
+    return true;
+  }
+
   /* ---- 진행 ---- */
   function frame(now) {
     raf = requestAnimationFrame(frame);
@@ -2529,7 +2621,8 @@ const Doom = (() => {
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.fillStyle = '#02030a'; ctx.fillRect(0, 0, w, h);
-    switch (sh.name) {
+    if (clipShot(sh.name, st, sh.dur, u)) { /* AI 영상 컷 */ }
+    else switch (root.dataset.clip = '', sh.name) {
       case 'deep': shotDeep(u); break;
       case 'track': shotTrack(u); break;
       case 'limb': shotLimb(u, false); break;
@@ -2577,7 +2670,7 @@ const Doom = (() => {
   function skip() {
     const fi = shots.findIndex(s => s.name === 'final');
     if (!raf || ended || si >= fi) return;
-    Sound.cineStop(.2); Sound.roarStop(.2);
+    Sound.cineStop(.2); Sound.roarStop(.2); clipStop();
     if (Sound.trackOn()) Sound.trackPlay(TRACK_FINAL);   // 녹음 소리도 마지막 장면 직전으로 건너뛴다
     if (hitAt < 0) { hitAt = T; root.classList.add('hit'); layoutCore(); makeCracks(); }
     T = shots[fi].t0; impZ = 1;
@@ -2586,12 +2679,15 @@ const Doom = (() => {
   async function play(el) {
     await build();
     // 녹음 소리는 보통 속도에 맞춰 섞었다. 움직임 줄이기(빠른 판)에서는 예전 효과음을 쓴다
-    const useTrack = !calm() && S.sound && await Promise.race([Sound.trackLoad(), new Promise(r => setTimeout(() => r(false), 1500))]);
+    // AI 영상도 아직 덜 받았으면 소리와 함께 1.5초까지만 기다린다(못 받으면 코드 그림)
+    const lim = p => Promise.race([p, new Promise(r => setTimeout(() => r(false), 1500))]);
+    const [useTrack] = await Promise.all([!calm() && S.sound && lim(Sound.trackLoad()), !calm() && lim(loadClips())]);
     root = el; cv = root.querySelector('#doomCv'); ctx = cv.getContext('2d');
     countEl = root.querySelector('#doomCount'); capEl = root.querySelector('.doom-cap'); capT = capEl.querySelector('b'); capS = capEl.querySelector('span');
     earthCv = earthCv || document.createElement('canvas'); earthCtx = earthCv.getContext('2d');
     resize(); addEventListener('resize', resize);
     lite = calm(); k = lite ? .45 : 1;
+    clipStop(); clipsOn = !lite && Object.keys(clips).length > 0; root.dataset.clip = '';
     let t = 0; shots = SHOTS.map(([name, dur]) => { const s = { name, t0: t, dur: dur * k }; t += dur * k; return s; });
     const at = nm => shots.find(s => s.name === nm).t0;
     tBlack = at('black'); tHit = at('impact'); tSh = at('shatter'); tText = at('final') + .2 * k;
@@ -2605,7 +2701,7 @@ const Doom = (() => {
       void root.offsetWidth; root.classList.add('go');
     });
   }
-  function stop() { cancelAnimationFrame(raf); raf = 0; removeEventListener('resize', resize); parts = []; shards = []; Sound.cineStop(.2); Sound.roarStop(.2); Sound.trackStop(.4); if (root) root.onclick = null; }
+  function stop() { cancelAnimationFrame(raf); raf = 0; removeEventListener('resize', resize); parts = []; shards = []; Sound.cineStop(.2); Sound.roarStop(.2); Sound.trackStop(.4); clipStop(); if (root) root.onclick = null; }
   return { build, play, stop, skip, setPhoto };
 })();
 async function doomsday() {
