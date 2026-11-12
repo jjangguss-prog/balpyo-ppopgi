@@ -292,11 +292,14 @@ dialog::backdrop{background:rgba(8,14,12,.55)}
 .doom.go:is([data-shot=track],[data-shot=limb],[data-shot=split]) .doom-alarm{animation:alarm .9s ease-in-out infinite}
 .doom.go:is([data-shot=face],[data-shot=eye],[data-shot=school]) .doom-alarm{animation:alarm .3s ease-in-out infinite}
 .doom-vig{position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.6) 100%)}
-.doom-cap{position:absolute; z-index:3; left:clamp(16px,5vw,64px); bottom:calc(10vh + 26px); display:grid; gap:8px; pointer-events:none; opacity:0}
-.doom-cap b{font:400 clamp(22px,3.6vmin,38px)/1.1 var(--font-ui); letter-spacing:.12em; color:#f4f1ea; text-shadow:0 2px 18px rgba(0,0,0,.8)}
-.doom-cap span{font:600 12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.24em; color:rgba(244,241,234,.6)}
-.doom-cap.on{animation:capIn 2.2s ease-out forwards}
-@keyframes capIn{0%{opacity:0; clip-path:inset(0 100% 0 0)}18%{opacity:1; clip-path:inset(0 0 0 0)}80%{opacity:1}100%{opacity:0; clip-path:inset(0 0 0 0)}}
+.doom-cap{position:absolute; z-index:3; left:clamp(20px,5vw,68px); bottom:calc(10vh + 24px); display:grid; gap:5px; pointer-events:none; opacity:0;
+  padding:11px 26px 12px 16px; border-left:3px solid #eab354;
+  background:linear-gradient(90deg, rgba(6,9,15,.84) 0%, rgba(6,9,15,.56) 72%, rgba(6,9,15,0) 100%);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px)}
+.doom-cap b{font:600 clamp(20px,3.1vmin,33px)/1.18 "Noto Serif KR","Malgun Gothic",serif; letter-spacing:.08em; color:#f8f6f0; text-shadow:0 2px 14px rgba(0,0,0,.95)}
+.doom-cap span{font:600 clamp(11px,1.4vmin,13px)/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.2em; color:#eab354; text-transform:uppercase; text-shadow:0 1px 8px rgba(0,0,0,.9)}
+.doom-cap.on{animation:capIn 2.3s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes capIn{0%{opacity:0; transform:translateY(8px); clip-path:inset(0 100% 0 0)}16%{opacity:1; transform:none; clip-path:inset(0 0 0 0)}82%{opacity:1; transform:none}100%{opacity:0; transform:translateY(4px); clip-path:inset(0 0 0 0)}}
 .doom-skip{position:absolute; z-index:3; right:clamp(16px,4vw,52px); bottom:calc(5vh - 8px); font:13px/1 var(--font-ui); color:rgba(255,255,255,.38); opacity:0; transition:opacity .4s; pointer-events:none}
 .doom.go:not(.end) .doom-skip{opacity:1}
 .doom[data-shot=black] .doom-hud,.doom[data-shot=black] .doom-cap{opacity:0!important}
@@ -1529,11 +1532,12 @@ const Doom = (() => {
   const trackToT = a => { if (a < 14.8) return a; const x = a - 14.8, slow = .5 / .3; return 14.8 + (x < slow ? x * .3 : .5 + x - slow); };
   const SHOTS = [['deep', 2.5],['track', 1.6], ['split', 3.6], ['limb', 1.6], ['face', .5], ['eye', .55], ['school', 1.6], ['black', .55], ['impact', .9], ['boom', 1.4], ['shatter', 1.8], ['after', 9.2], ['final', 99]];
   const CAPS = {
-    deep: ['지구로부터 384,400 km', '미확인 천체 · 충돌 궤도 확인'],
-    limb: ['대기권 진입', '고도 120 km · 초속 31 km'],
-    school: ['서울 도봉구 · 창동중학교', '충돌 예상 지점'],
-    impact: ['동아시아 상공 · 대충돌', 'TNT 100조 톤 · 지각 판 균열 시작'],
-    shatter: ['행성 구조 붕괴', '맨틀 용융 · 중력 결합 상실']
+    deep: ['지구로부터 384,400 km · 심우주', 'TARGET · 37.65°N 127.04°E · 한반도 충돌 궤도 진입'],
+    track: ['동아시아 상공 · 저궤도 추적', 'IMPACT VECTOR · 대한민국 서울 상공 직격 궤도'],
+    limb: ['한반도 상공 대기권 진입', 'ALT 120 KM · VEL 31.4 KM/S · 열권 급가열'],
+    school: ['서울 도봉구 · 창동중학교', 'GROUND ZERO · 충돌 예상 지점 반경 0.0 KM'],
+    impact: ['한반도 서울 상공 · 대충돌', 'YIELD 100 TERA-TNT · 유라시아 지각 판 파열'],
+    shatter: ['행성 구조 붕괴', 'CORE RUPTURE · 맨틀 용융 및 중력 결합 상실']
   };
   const TW = 1024, TH = 512, RS = 360;
   let tex, cloud, lights, sphL, sphH, spr, rockCv, rockTmp, rockTmpCtx, grainPat = [], built = false, building = null;
@@ -2242,11 +2246,11 @@ const Doom = (() => {
   /* ---- 분할 화면: 각국 관제실 ---- */
   const ROOMS = [
     { live: true },
-    { tag: '미국', name: '우주 관제센터', hue: 212, line: '궤도가… 정확히 지구예요!', poses: ['head', 'point', 'phone'] },
-    { tag: '대한민국', name: '우주항공 상황실', hue: 196, line: '서울 도봉구… 창동중학교 쪽입니다!', poses: ['point', 'wave', 'head'] },
-    { tag: '유럽', name: '우주 관제센터', hue: 232, line: '세 번 계산했는데 전부 같아요', poses: ['phone', 'head', 'point'] },
-    { tag: '일본', name: '우주 관제센터', hue: 182, line: '피할 방법이… 없습니다', poses: ['wave', 'phone', 'head'] },
-    { tag: '국가안보', name: '긴급 상황실', hue: 352, line: '전군 비상! 지금 바로 보고해!', poses: ['point', 'head', 'wave'] }
+    { tag: '미국', name: 'NASA 휴스턴 관제센터', hue: 212, line: '궤도가… 정확히 한반도입니다!', poses: ['head', 'point', 'phone'] },
+    { tag: '대한민국', name: '우주항공 상황실', hue: 196, line: '서울 도봉구… 창동중학교 상공입니다!', poses: ['point', 'wave', 'head'] },
+    { tag: '유럽', name: 'ESA 궤도 관제센터', hue: 232, line: '세 번 계산했는데 전부 한반도예요', poses: ['phone', 'head', 'point'] },
+    { tag: '일본', name: 'JAXA 우주 관제센터', hue: 182, line: '피할 방법이… 전혀 없습니다', poses: ['wave', 'phone', 'head'] },
+    { tag: '국가안보', name: '지하 벙커 긴급상황실', hue: 352, line: '전군 비상! 지금 바로 보고해!', poses: ['point', 'head', 'wave'] }
   ];
   function person(g, x, y, s, pose, t, seed, rim) {
     g.save(); g.translate(x, y); g.scale(s, s);
@@ -2328,36 +2332,50 @@ const Doom = (() => {
     g.fillStyle = '#fff'; g.fillText('LIVE  궤도 망원경', 22, 8 + fs * .82);
   }
   let splitShown = 0;
+  function cinemaSub(g, W, H, text, a, yRatio = .87, maxRatio = .062) {
+    if (a <= 0 || !text) return;
+    const mm = Math.min(W, H);
+    let size = Math.max(11, Math.min(28, mm * maxRatio));
+    g.save(); g.globalAlpha = a;
+    // 하단 시네마틱 자막 그림자 그라데이션 바 (실사 영화 레터박스/하단 자막 시인성 확보)
+    const sg = g.createLinearGradient(0, H * (yRatio - .16), 0, H);
+    sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(.55, 'rgba(0,0,0,.58)'); sg.addColorStop(1, 'rgba(0,0,0,.84)');
+    g.fillStyle = sg; g.fillRect(0, H * (yRatio - .16), W, H * (1 - yRatio + .16));
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const fnt = () => { g.font = `600 ${size}px "Noto Serif KR","Malgun Gothic",serif`; }; fnt();
+    const line = '— ' + text;
+    while (g.measureText(line).width > W * .9 && size > 9) { size -= 1; fnt(); }
+    const y = H * yRatio;
+    g.lineJoin = 'round'; g.miterLimit = 2;
+    g.shadowColor = 'rgba(0,0,0,.95)'; g.shadowBlur = Math.max(6, size * .45); g.shadowOffsetY = 2;
+    g.lineWidth = Math.max(2.4, size * .16); g.strokeStyle = 'rgba(0,0,0,.92)'; g.strokeText(line, W * .5, y);
+    g.shadowBlur = 0; g.fillStyle = '#f8f6f0'; g.fillText(line, W * .5, y);
+    g.restore();
+  }
   function drawRoomOverlay(W, H, t, u, cfg, idx) {
     const g = ctx, mm = Math.min(W, H), al = .5 + .5 * Math.sin(t * 9 + idx);
+    const fs = Math.max(10, mm * .062);
+    // 상단 실사 영화풍 관제 텔레메트리 헤더 바
+    const hg = g.createLinearGradient(0, 0, 0, fs * 2.6);
+    hg.addColorStop(0, 'rgba(2,5,12,.82)'); hg.addColorStop(1, 'rgba(2,5,12,0)');
+    g.fillStyle = hg; g.fillRect(0, 0, W, fs * 2.6);
     if (cfg.live) {
-      const px = W * (.54 - .06 * u), py = H * (.38 + .04 * u), s = mm * .055;
-      reticle(px, py, Math.max(12, s * 2.2), [Math.round((1 - u) * 60000 + 900).toLocaleString() + ' km']);
-      const fs = Math.max(10, mm * .075);
-      g.fillStyle = 'rgba(4,8,16,.68)'; rr(g, 6, 6, fs * 8.4, fs * 1.55, 5); g.fill();
-      g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.textBaseline = 'middle';
-      g.fillStyle = `rgba(255,50,60,${.6 + .4 * Math.sin(t * 10)})`; g.beginPath(); g.arc(14, 6 + fs * .78, fs * .32, 0, 7); g.fill();
-      g.fillStyle = '#fff'; g.fillText('LIVE  궤도 망원경', 22, 6 + fs * .8);
+      g.fillStyle = `rgba(255,55,65,${.65 + .35 * Math.sin(t * 10)})`; g.fillRect(10, 10, 3, fs * 1.35);
+      g.font = `700 ${fs * .92}px ui-monospace,Menlo,Consolas,monospace`; g.textBaseline = 'top'; g.textAlign = 'left';
+      g.fillStyle = '#ff6b78'; g.fillText('SAT-FEED · 한반도 상공', 19, 9);
+      g.font = `500 ${fs * .78}px ui-monospace,Menlo,Consolas,monospace`; g.fillStyle = 'rgba(248,246,240,.82)';
+      g.fillText('DIST ' + Math.round((1 - u) * 58000 + 850).toLocaleString() + ' KM · 37.65°N 127.04°E', 19, 11 + fs * 1.02);
       return;
     }
-    const hue = cfg.hue, fs = Math.max(10, mm * .075);
-    g.fillStyle = `rgba(255,0,30,${.08 * al})`; g.fillRect(0, 0, W, H);
-    g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.textBaseline = 'middle';
-    const tag = cfg.tag, tw = g.measureText(tag).width;
-    g.font = `${fs * .85}px "Gowun Dodum","Malgun Gothic",sans-serif`;
-    const nw = g.measureText(cfg.name).width;
-    g.fillStyle = 'rgba(4,8,16,.72)'; rr(g, 6, 6, tw + fs + nw + 16, fs * 1.68, 6); g.fill();
-    g.fillStyle = hue > 300 ? '#d81e2c' : '#1d62c9'; rr(g, 8, 8, tw + fs, fs * 1.52, 5); g.fill();
-    g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`;
-    g.fillStyle = '#fff'; g.fillText(tag, 8 + fs / 2, 8 + fs * .78);
-    g.font = `${fs * .85}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.fillStyle = 'rgba(255,255,255,.92)'; g.fillText(cfg.name, 14 + tw + fs, 8 + fs * .78);
-    g.font = `700 ${Math.max(9, mm * .055)}px ui-monospace,Menlo,Consolas,monospace`; g.textBaseline = 'top'; g.textAlign = 'right';
-    g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText('T−' + (Math.max(0, tHit - T) / k).toFixed(1), W - 8, 8);
-    g.fillStyle = `rgba(255,65,80,${.45 + .55 * al})`; g.fillText('IMPACT', W - 8, 8 + Math.max(10, mm * .06));
+    const isSec = cfg.hue > 300;
+    g.fillStyle = isSec ? '#ff4757' : '#eab354'; g.fillRect(10, 10, 3, fs * 1.35);
+    g.font = `600 ${fs * .95}px "Noto Serif KR","Malgun Gothic",serif`; g.textBaseline = 'top'; g.textAlign = 'left';
+    g.fillStyle = '#f8f6f0'; g.fillText(cfg.tag + ' · ' + cfg.name, 19, 9);
+    g.font = `600 ${fs * .76}px ui-monospace,Menlo,Consolas,monospace`; g.textAlign = 'right';
+    g.fillStyle = `rgba(255,85,95,${.55 + .45 * al})`; g.fillText('T−' + (Math.max(0, tHit - T) / k).toFixed(1) + 's', W - 10, 10);
     g.textAlign = 'left';
-    if (t > .2) bang(g, W * .5, H * .36, H * .14, t - .2 - idx * .05);
-    const line = typed(cfg.line, t - .35 - idx * .08, 22);
-    if (line) bubble(g, line, W / 2, H * .76, Math.max(10, mm * .07), 1, W * .94);
+    const subA = c01((t - .28 - idx * .07) * 4);
+    if (subA > 0) cinemaSub(g, W, H, cfg.line, subA, .86, .066);
   }
   function shotSplit(u, st) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
@@ -2375,21 +2393,22 @@ const Doom = (() => {
       if (rv.readyState >= 2) {
         if (!clipLast) clipLast = new Map();
         let lc = clipLast.get(rv);
-        if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(rv, lc); }
-        lc.getContext('2d').drawImage(rv, 0, 0, 640, 352);
+        if (!lc) { lc = document.createElement('canvas'); lc.width = 1280; lc.height = 704; clipLast.set(rv, lc); }
+        lc.getContext('2d').drawImage(rv, 0, 0, 1280, 704);
         rSrc = rv;
-      } else if (clipLast && clipLast.get(rv)) { rSrc = clipLast.get(rv); cw = 640 / 3; ch = 352 / 2; }
+      } else if (clipLast && clipLast.get(rv)) { rSrc = clipLast.get(rv); cw = 1280 / 3; ch = 704 / 2; }
       root.dataset.clip = 'rooms';
     } else paintSphere(sphL);
     const port = h > w * 1.05, cols = port ? 2 : 3, rows = port ? 3 : 2, gap = 4, top = h * .1, ah = h * .8;
     const pw = (w - gap * (cols + 1)) / cols, ph = (ah - gap * (rows + 1)) / rows;
     for (let i = 0; i < ROOMS.length; i++) {
-      const ap = c01((st - i * .13 * k) / (.22 * k)); if (ap <= 0) continue;
-      if (i >= splitShown) { splitShown = i + 1; Sound.static(.18); }
-      const col = i % cols, row = Math.floor(i / cols), x = gap + col * (pw + gap) + (1 - ease(ap)) * pw * .25, y = top + gap + row * (ph + gap);
+      const ap = c01((st - i * .11 * k) / (.22 * k)); if (ap <= 0) continue;
+      if (i >= splitShown) { splitShown = i + 1; if (!rSrc) Sound.static(.18); }
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = gap + col * (pw + gap) + (rSrc ? 0 : (1 - ease(ap)) * pw * .25), y = top + gap + row * (ph + gap);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.save();
-      ctx.translate(x + sx * .4, y + sy * .4); ctx.beginPath(); ctx.rect(0, 0, pw, ph); ctx.clip(); ctx.globalAlpha = 1;
-      const lt = st - i * .13 * k;
+      ctx.translate(x + sx * .25, y + sy * .25); ctx.beginPath(); ctx.rect(0, 0, pw, ph); ctx.clip(); ctx.globalAlpha = 1;
+      const lt = st - i * .11 * k;
       if (rSrc) {
         const sc = Math.max(pw / cw, ph / ch), dw = cw * sc, dh = ch * sc;
         ctx.drawImage(rSrc, (i % 3) * cw, Math.floor(i / 3) * ch, cw, ch, (pw - dw) / 2, (ph - dh) / 2, dw, dh);
@@ -2397,12 +2416,12 @@ const Doom = (() => {
       } else if (ROOMS[i].live) drawLive(pw, ph, lt, u);
       else drawRoom(pw, ph, lt, ROOMS[i], i);
       ctx.globalCompositeOperation = 'source-over';
-      if (ap < 1) { ctx.fillStyle = `rgba(255,255,255,${(1 - ap) * .7})`; ctx.fillRect(0, 0, pw, ph); }
-      const vg = ctx.createRadialGradient(pw / 2, ph / 2, Math.min(pw, ph) * .3, pw / 2, ph / 2, Math.max(pw, ph) * .75);
-      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, pw, ph);
+      if (ap < 1) { ctx.fillStyle = rSrc ? `rgba(0,0,0,${1 - ease(ap)})` : `rgba(255,255,255,${(1 - ap) * .7})`; ctx.fillRect(0, 0, pw, ph); }
+      const vg = ctx.createRadialGradient(pw / 2, ph / 2, Math.min(pw, ph) * .35, pw / 2, ph / 2, Math.max(pw, ph) * .78);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, pw, ph);
       ctx.restore(); ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, pw - 1, ph - 1);
     }
-    shake = Math.max(shake, .15 + .25 * u);
+    shake = Math.max(shake, .12 + .18 * u);
   }
 
   /* ---- 결말: 여러 타임라인 ---- */
@@ -2428,11 +2447,18 @@ const Doom = (() => {
     }
   }
   function tlCard(g, W, H, tl, t) {
-    const mm = Math.min(W, H), a = c01(t * 5), fs = Math.max(12, mm * .075);
-    g.save(); g.globalAlpha = a; g.textBaseline = 'top';
-    g.font = `700 ${fs * .55}px ui-monospace,Menlo,Consolas,monospace`; g.fillStyle = '#ffcf7a'; g.fillText('TIMELINE ' + tl.id, W * .05, H * .12);
-    g.font = `${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 12;
-    g.fillText(typed(tl.when, t, 40), W * .05, H * .12 + fs * .8); g.restore();
+    const mm = Math.min(W, H), a = c01(t * 5), fs = Math.max(11, mm * .058);
+    const x0 = W * .045, y0 = H === h ? H * .135 : H * .08;
+    g.save(); g.globalAlpha = a; g.textBaseline = 'top'; g.textAlign = 'left';
+    const bg = g.createLinearGradient(x0 - 8, 0, x0 + fs * 13, 0);
+    bg.addColorStop(0, 'rgba(4,7,14,.74)'); bg.addColorStop(1, 'rgba(4,7,14,0)');
+    g.fillStyle = bg; g.fillRect(x0 - 8, y0 - 6, fs * 13, fs * 2.25);
+    g.fillStyle = '#eab354'; g.fillRect(x0 - 8, y0 - 4, 2.5, fs * 1.9);
+    g.font = `600 ${fs * .52}px ui-monospace,Menlo,Consolas,monospace`; g.fillStyle = '#eab354';
+    g.fillText('OBSERVATION LOG · TIMELINE ' + tl.id, x0 + 2, y0 - 2);
+    g.font = `600 ${fs * .92}px "Noto Serif KR","Malgun Gothic",serif`; g.fillStyle = '#f8f6f0';
+    g.shadowColor = 'rgba(0,0,0,.9)'; g.shadowBlur = 10;
+    g.fillText(tl.when, x0 + 2, y0 + fs * .66); g.restore();
   }
   function zoomTo(g, W, H, fx, fy, t) { const z = 1 + .03 * t + (t > .45 ? .22 * ease(c01((t - .45) / .15)) : 0); g.translate(fx, fy); g.scale(z, z); g.translate(-fx, -fy); }
   function trexPath(g, jaw) {
@@ -2556,32 +2582,26 @@ const Doom = (() => {
       if (av.readyState >= 2) {
         if (!clipLast) clipLast = new Map();
         let lc = clipLast.get(av);
-        if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(av, lc); }
-        lc.getContext('2d').drawImage(av, 0, 0, 640, 352);
+        if (!lc) { lc = document.createElement('canvas'); lc.width = 1280; lc.height = 704; clipLast.set(av, lc); }
+        lc.getContext('2d').drawImage(av, 0, 0, 1280, 704);
         aSrc = av;
-      } else if (clipLast && clipLast.get(av)) { aSrc = clipLast.get(av); vw = 640; vh = 352; }
+      } else if (clipLast && clipLast.get(av)) { aSrc = clipLast.get(av); vw = 1280; vh = 704; }
       root.dataset.clip = 'after';
     }
     if (n < 4) {
-      if (n !== afterSeg) { afterSeg = n; flash = .35; flashRGB = '255,255,255'; Sound.swoosh(.45, .6); Sound.braam(.32); }
+      if (n !== afterSeg) { afterSeg = n; flash = aSrc ? .18 : .35; flashRGB = '255,255,255'; Sound.swoosh(.45, .6); Sound.braam(.32); }
       const t = (st - n * seg) / k;
       if (aSrc) {
         const sc = Math.max(w / vw, h / vh) * 1.04, dw = vw * sc, dh = vh * sc;
-        ctx.drawImage(aSrc, (w - dw) / 2 + sx * .3, (h - dh) / 2 + sy * .3, dw, dh);
-        const bangPos = [[.46, .28], [.44, .26], [.48, .28], [.38, .26]][n];
-        bang(ctx, w * bangPos[0], h * bangPos[1], M * .13, t - .45);
-        if (n === 2) {
-          const fs = Math.max(11, M * .042); ctx.font = `700 ${fs}px ui-monospace,Menlo,Consolas,monospace`; ctx.textBaseline = 'top';
-          ctx.fillStyle = `rgba(120,255,140,${.6 + .4 * Math.sin(t * 12)})`; ctx.fillText('SIGNAL LOST · EARTH', w * .58, h * .71);
-        }
+        ctx.drawImage(aSrc, (w - dw) / 2 + sx * .25, (h - dh) / 2 + sy * .25, dw, dh);
         tlCard(ctx, w, h, TL[n], t);
-        bubble(ctx, TL[n].line, w * .5, h * .81, Math.max(11, M * .06), c01((t - .5) * 5), w * .94);
+        cinemaSub(ctx, w, h, TL[n].line, c01((t - .35) * 4.5), .84, .048);
       } else {
         ctx.save(); ctx.translate(sx * .3, sy * .3); SCENES[n](w, h, t); ctx.restore();
         tlCard(ctx, w, h, TL[n], t);
       }
     } else {
-      if (afterSeg !== 4) { afterSeg = 4; flash = .3; Sound.static(.3); }
+      if (afterSeg !== 4) { afterSeg = 4; flash = .2; if (!aSrc) Sound.static(.3); }
       const t = (st - 4 * seg) / k, gap = 4, top = h * .1, ah = h * .8, pw = (w - gap * 3) / 2, ph = (ah - gap * 3) / 2;
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
       const cw = vw / 2, ch = vh / 2;
@@ -2593,7 +2613,7 @@ const Doom = (() => {
           const sc = Math.max(pw / cw, ph / ch), dw = cw * sc, dh = ch * sc;
           ctx.drawImage(aSrc, (i % 2) * cw, Math.floor(i / 2) * ch, cw, ch, (pw - dw) / 2, (ph - dh) / 2, dw, dh);
           tlCard(ctx, pw, ph, TL[i], 2);
-          bubble(ctx, TL[i].line, pw * .5, ph * .85, Math.max(10, Math.min(pw, ph) * .058), 1, pw * .94);
+          cinemaSub(ctx, pw, ph, TL[i].line, 1, .87, .062);
         } else {
           SCENES[i](pw, ph, 1.9 + t); tlCard(ctx, pw, ph, TL[i], 2);
         }
@@ -2606,10 +2626,10 @@ const Doom = (() => {
 
   /* ---- AI 영상 컷 ----
      심우주·궤도 추적·6분할 상황실·대기권 진입·학교 폭발·지구 충돌·지구 붕괴·4타임라인 결말까지 전 컷을
-     이 PC에서 AI(FLUX.2 klein·Z-Image·Wan 2.2 + 시네마틱 다중 레이어 합성)로 만든 고화질 영상으로 재생한다.
-     영상은 doom 폴더에 따로 두고 지구 멸망 공을 켰을 때만 받는다. 못 받으면(파일 하나만 들고 다닐 때 등) 코드로 그린 장면이 나온다.
+     이 PC에서 AI(FLUX.2 klein·Z-Image·Wan 2.2 + 3D 한반도 위성 지형 합성)로 만든 고화질 실사 영상으로 재생한다.
+     영상은 doom 폴더에 따로 두고 지구 멸망 공을 켰을 때 미리 받는다. 못 받으면(파일 하나만 들고 다닐 때 등) 코드로 그린 장면이 나온다.
      화면 시간 T는 녹음 소리에 맞춰 가므로, 영상도 T에서 계산한 시각을 따라가게 한다(0.2초 넘게 벌어지면 맞춤). */
-  const CLIP_SRC = { space: 'doom/space.mp4', rooms: 'doom/rooms.mp4', entry: 'doom/entry.mp4', school: 'doom/school.mp4', shatter: 'doom/shatter.mp4', after: 'doom/after.mp4' };
+  const CLIP_SRC = { space: 'doom/space.mp4?v=2', rooms: 'doom/rooms.mp4?v=2', entry: 'doom/entry.mp4?v=2', school: 'doom/school.mp4?v=2', shatter: 'doom/shatter.mp4?v=2', after: 'doom/after.mp4?v=2' };
   // 컷 이름: [영상, 영상 시작초, 끝초, 확대 처음, 확대 끝, 가운데 둘 곳 x, y(0~1)]
   const CLIP_PLAN = {
     deep: ['space', .05, 2.5, 1, 1.05, .5, .5],
@@ -2681,60 +2701,25 @@ const Doom = (() => {
     else if (Math.abs(v.currentTime - t) > .2) v.currentTime = t;
     const vw = v.videoWidth || 1280, vh = v.videoHeight || 704;
     let src = v;
-    if (v.readyState >= 2) {   // 마지막 장면을 작게 남겨 둔다: 영상이 시각을 맞추는 동안 빈 화면 대신 보여 줌
+    if (v.readyState >= 2) {   // 마지막 장면을 원본 해상도로 남겨 둔다: 영상이 시각을 맞추는 동안 빈 화면이나 저화질 깜빡임이 없도록
       if (!clipLast) clipLast = new Map();
       let lc = clipLast.get(v);
-      if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(v, lc); }
-      lc.getContext('2d').drawImage(v, 0, 0, 640, 352);
+      if (!lc) { lc = document.createElement('canvas'); lc.width = 1280; lc.height = 704; clipLast.set(v, lc); }
+      lc.getContext('2d').drawImage(v, 0, 0, 1280, 704);
     } else if (clipLast && clipLast.get(v)) src = clipLast.get(v); else return true;
     const z = (p[3] + (p[4] - p[3]) * f) * 1.05;   // 흔들려도 가장자리가 안 보이게 조금 더 크게
     const sc = Math.max(w / vw, h / vh) * z, dw = vw * sc, dh = vh * sc;
     const x = Math.min(0, Math.max(w - dw, w / 2 - p[5] * dw + sx)), y = Math.min(0, Math.max(h - dh, h / 2 - p[6] * dh + sy));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.drawImage(src, x, y, dw, dh);
-    // 영상 위에 실시간 시네마틱 HUD·불똥·충격파 레이어를 얹어 현장감을 극대화
-    if (name === 'deep') {
-      drawFlare(w * .05, h * .08, M * .5, .45);
-      if (!lite && Math.random() < .65) {
-        const a = rnd(0, 6.3), r = rnd(.12, .65) * M;
-        emit({ x: w * .38 + Math.cos(a) * r, y: h * .46 + Math.sin(a) * r, vx: Math.cos(a) * M * rnd(.5, 1.3), vy: Math.sin(a) * M * rnd(.5, 1.3), size: rnd(2.5, 5.5), life: rnd(.4, .8), kind: 'dust', drag: 0 });
-      }
-      drawParts();
-    }
-    if (name === 'track') {
-      shake = Math.max(shake, u * u * .28);
-      const ipx = w * .45, ipy = h * .52, pulse = .5 + .5 * Math.sin(T * 9), rr2 = M * .065;
-      ctx.save(); ctx.translate(ipx, ipy); ctx.rotate(T * 1.4);
-      ctx.strokeStyle = `rgba(255,60,75,${.6 + .38 * pulse})`; ctx.lineWidth = 1.8; ctx.setLineDash([6, 5]);
-      ctx.beginPath(); ctx.arc(0, 0, rr2 * (1 + .18 * pulse), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.moveTo(Math.cos(a) * rr2 * .45, Math.sin(a) * rr2 * .45); ctx.lineTo(Math.cos(a) * rr2 * 1.45, Math.sin(a) * rr2 * 1.45); } ctx.stroke();
-      ctx.restore();
-      const px = w * (.74 - .26 * u), py = h * (.24 + .25 * u);
-      reticle(px, py, Math.max(22, M * .055), ['UNKNOWN OBJECT', Math.round((1 - u) * 120000 + 2000).toLocaleString() + ' km', 'TARGET: SEOUL, KR']);
-    }
-    if (name === 'limb' || name === 'face' || name === 'eye') {
-      if (!lite) for (let i = 0; i < (name === 'face' ? 3 : 2); i++) {
-        emit({ x: w * (.58 - .12 * u) + rnd(-.06, .06) * M, y: h * (.42 + .14 * u) + rnd(-.06, .06) * M, vx: M * rnd(.35, 1.3), vy: -M * rnd(.25, 1.0), size: M * rnd(.012, .032), life: rnd(.22, .5), kind: 'spark', drag: .4 });
-      }
-      drawParts();
-    }
-    if (name === 'limb') shake = Math.max(shake, .12 + .3 * u);
-    if (name === 'face') shake = Math.max(shake, .65);
-    if (name === 'eye') { shake = Math.max(shake, .5 + .6 * u); const wu = c01((u - .65) / .35); flash = Math.max(flash, wu * wu * .9); flashRGB = '255,240,215'; }
-    if (name === 'school') {
-      shake = Math.max(shake, .15 + .6 * u);
-      if (u < .82) reticle(w * .5, h * .54, Math.max(20, M * .055), ['GROUND ZERO · 창동중', Math.round((1 - u) * 1800 + 12) + ' m']);
-      const wu = c01((u - .82) / .18); flash = Math.max(flash, wu * wu * .95); flashRGB = '255,244,225';
-    }
-    if (name === 'impact') { shake = Math.max(shake, 1.1 - u * .4); drawParts(); }
-    if (name === 'boom') { shake = Math.max(shake, 1 - u * .5); drawParts(); }
-    if (name === 'shatter') { drawParts(); }
-    if (name === 'final') {
-      if (!lite && Math.random() < .45) {
-        emit({ x: w * .5 + rnd(-.45, .45) * w, y: h * .55 + rnd(-.35, .35) * h, vx: rnd(-.08, .08) * M, vy: rnd(-.14, -.02) * M, size: M * rnd(.01, .028), life: rnd(1.2, 2.6), kind: 'spark', drag: .2 });
-      }
-      drawParts();
-    }
+    // 예전 2D 캔버스 도형(파티클·십자선·플레어 원)은 실사 영상 위에 그리지 않고 순수 카메라 진동·노출 섬광만 동기화
+    if (name === 'track') shake = Math.max(shake, u * u * .22);
+    if (name === 'limb') shake = Math.max(shake, .12 + .28 * u);
+    if (name === 'face') shake = Math.max(shake, .55);
+    if (name === 'eye') { shake = Math.max(shake, .45 + .55 * u); const wu = c01((u - .68) / .32); flash = Math.max(flash, wu * wu * .88); flashRGB = '255,240,215'; }
+    if (name === 'school') { shake = Math.max(shake, .15 + .55 * u); const wu = c01((u - .82) / .18); flash = Math.max(flash, wu * wu * .92); flashRGB = '255,244,225'; }
+    if (name === 'impact') shake = Math.max(shake, 1.0 - u * .4);
+    if (name === 'boom') shake = Math.max(shake, .95 - u * .45);
     root.dataset.clip = p[0];
     return true;
   }
@@ -2820,11 +2805,11 @@ const Doom = (() => {
     T = shots[fi].t0; impZ = 1;
     if (shAt < 0) { shAt = T - 1.6; onShatter(); }
   }
+  function preload() { build(); if (!calm()) loadClips(); }
   async function play(el) {
     await build();
-    // 녹음 소리는 보통 속도에 맞춰 섞었다. 움직임 줄이기(빠른 판)에서는 예전 효과음을 쓴다
-    // AI 영상도 아직 덜 받았으면 소리와 함께 1.5초까지만 기다린다(못 받으면 코드 그림)
-    const lim = p => Promise.race([p, new Promise(r => setTimeout(() => r(false), 1500))]);
+    // 녹음 소리와 AI 영상 6종이 모두 메모리에 준비될 때까지 충분히(최대 8초) 기다려 중간 컷이 코드로 떨어지지 않게 한다
+    const lim = p => Promise.race([p, new Promise(r => setTimeout(() => r(false), 8000))]);
     const [useTrack] = await Promise.all([!calm() && S.sound && lim(Sound.trackLoad()), !calm() && lim(loadClips())]);
     root = el; cv = root.querySelector('#doomCv'); ctx = cv.getContext('2d');
     countEl = root.querySelector('#doomCount'); capEl = root.querySelector('.doom-cap'); capT = capEl.querySelector('b'); capS = capEl.querySelector('span');
@@ -2846,7 +2831,7 @@ const Doom = (() => {
     });
   }
   function stop() { cancelAnimationFrame(raf); raf = 0; removeEventListener('resize', resize); parts = []; shards = []; Sound.cineStop(.2); Sound.roarStop(.2); Sound.trackStop(.4); clipStop(); if (root) root.onclick = null; }
-  return { build, play, stop, skip, setPhoto };
+  return { build, preload, play, stop, skip, setPhoto };
 })();
 async function doomsday() {
   busy = true; document.body.classList.add('busy'); renderTray();
@@ -2868,7 +2853,7 @@ el.doomBack.addEventListener('click', endDoom);
 el.segDoom.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   S.doom = b.dataset.v === 'on'; save(); setSeg(el.segDoom, S.doom ? 'on' : 'off');
-  if (S.doom) { Sound.init(); setTimeout(() => { Doom.build(); Sound.trackLoad(); }, 400); }
+  if (S.doom) { Sound.init(); setTimeout(() => { Doom.preload(); Sound.trackLoad(); }, 400); }
   toast(S.doom ? '지구 멸망 공을 넣었어요. 언젠가 나와요' : '지구 멸망 공을 뺐어요');
 });
 function setPick(n) {
@@ -2954,7 +2939,7 @@ addEventListener('keydown', e => {
   if (k === '2') setPick(2);
 });
 
-if (S.doom) setTimeout(() => Doom.build(), 2500);
+if (S.doom) setTimeout(() => Doom.preload(), 1500);
 /* 학교 사진: 줄여서 이 브라우저에만 저장 */
 const PHOTO_KEY = 'chalk-draw-school-photo';
 const schoolFile = $('#schoolFile'), schoolClear = $('#schoolClear'), schoolInfo = $('#schoolInfo');
