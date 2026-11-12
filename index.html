@@ -1531,7 +1531,9 @@ const Doom = (() => {
   const CAPS = {
     deep: ['지구로부터 384,400 km', '미확인 천체 · 충돌 궤도 확인'],
     limb: ['대기권 진입', '고도 120 km · 초속 31 km'],
-    school: ['서울 도봉구 · 창동중학교', '충돌 예상 지점']
+    school: ['서울 도봉구 · 창동중학교', '충돌 예상 지점'],
+    impact: ['동아시아 상공 · 대충돌', 'TNT 100조 톤 · 지각 판 균열 시작'],
+    shatter: ['행성 구조 붕괴', '맨틀 용융 · 중력 결합 상실']
   };
   const TW = 1024, TH = 512, RS = 360;
   let tex, cloud, lights, sphL, sphH, spr, rockCv, rockTmp, rockTmpCtx, grainPat = [], built = false, building = null;
@@ -2326,9 +2328,59 @@ const Doom = (() => {
     g.fillStyle = '#fff'; g.fillText('LIVE  궤도 망원경', 22, 8 + fs * .82);
   }
   let splitShown = 0;
+  function drawRoomOverlay(W, H, t, u, cfg, idx) {
+    const g = ctx, mm = Math.min(W, H), al = .5 + .5 * Math.sin(t * 9 + idx);
+    if (cfg.live) {
+      const px = W * (.54 - .06 * u), py = H * (.38 + .04 * u), s = mm * .055;
+      reticle(px, py, Math.max(12, s * 2.2), [Math.round((1 - u) * 60000 + 900).toLocaleString() + ' km']);
+      const fs = Math.max(10, mm * .075);
+      g.fillStyle = 'rgba(4,8,16,.68)'; rr(g, 6, 6, fs * 8.4, fs * 1.55, 5); g.fill();
+      g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.textBaseline = 'middle';
+      g.fillStyle = `rgba(255,50,60,${.6 + .4 * Math.sin(t * 10)})`; g.beginPath(); g.arc(14, 6 + fs * .78, fs * .32, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.fillText('LIVE  궤도 망원경', 22, 6 + fs * .8);
+      return;
+    }
+    const hue = cfg.hue, fs = Math.max(10, mm * .075);
+    g.fillStyle = `rgba(255,0,30,${.08 * al})`; g.fillRect(0, 0, W, H);
+    g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.textBaseline = 'middle';
+    const tag = cfg.tag, tw = g.measureText(tag).width;
+    g.font = `${fs * .85}px "Gowun Dodum","Malgun Gothic",sans-serif`;
+    const nw = g.measureText(cfg.name).width;
+    g.fillStyle = 'rgba(4,8,16,.72)'; rr(g, 6, 6, tw + fs + nw + 16, fs * 1.68, 6); g.fill();
+    g.fillStyle = hue > 300 ? '#d81e2c' : '#1d62c9'; rr(g, 8, 8, tw + fs, fs * 1.52, 5); g.fill();
+    g.font = `700 ${fs}px "Gowun Dodum","Malgun Gothic",sans-serif`;
+    g.fillStyle = '#fff'; g.fillText(tag, 8 + fs / 2, 8 + fs * .78);
+    g.font = `${fs * .85}px "Gowun Dodum","Malgun Gothic",sans-serif`; g.fillStyle = 'rgba(255,255,255,.92)'; g.fillText(cfg.name, 14 + tw + fs, 8 + fs * .78);
+    g.font = `700 ${Math.max(9, mm * .055)}px ui-monospace,Menlo,Consolas,monospace`; g.textBaseline = 'top'; g.textAlign = 'right';
+    g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText('T−' + (Math.max(0, tHit - T) / k).toFixed(1), W - 8, 8);
+    g.fillStyle = `rgba(255,65,80,${.45 + .55 * al})`; g.fillText('IMPACT', W - 8, 8 + Math.max(10, mm * .06));
+    g.textAlign = 'left';
+    if (t > .2) bang(g, W * .5, H * .36, H * .14, t - .2 - idx * .05);
+    const line = typed(cfg.line, t - .35 - idx * .08, 22);
+    if (line) bubble(g, line, W / 2, H * .76, Math.max(10, mm * .07), 1, W * .94);
+  }
   function shotSplit(u, st) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
-    paintSphere(sphL);
+    const rv = clipsOn && clips.rooms;
+    let rSrc = null, cw = 426, ch = 352;
+    if (rv) {
+      const vt = .05 + 3.65 * u, rate = 3.65 / (3.6 * k);
+      if (clipNow && clipNow !== rv) clipNow.pause();
+      clipNow = rv;
+      if (Math.abs(rv.playbackRate - rate) > .01) rv.playbackRate = rate;
+      if (rv.paused || rv.ended) { if (Math.abs(rv.currentTime - vt) > .06) rv.currentTime = vt; if (u < 1) rv.play().catch(() => {}); }
+      else if (Math.abs(rv.currentTime - vt) > .2) rv.currentTime = vt;
+      const vw = rv.videoWidth || 1280, vh = rv.videoHeight || 704;
+      cw = vw / 3; ch = vh / 2;
+      if (rv.readyState >= 2) {
+        if (!clipLast) clipLast = new Map();
+        let lc = clipLast.get(rv);
+        if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(rv, lc); }
+        lc.getContext('2d').drawImage(rv, 0, 0, 640, 352);
+        rSrc = rv;
+      } else if (clipLast && clipLast.get(rv)) { rSrc = clipLast.get(rv); cw = 640 / 3; ch = 352 / 2; }
+      root.dataset.clip = 'rooms';
+    } else paintSphere(sphL);
     const port = h > w * 1.05, cols = port ? 2 : 3, rows = port ? 3 : 2, gap = 4, top = h * .1, ah = h * .8;
     const pw = (w - gap * (cols + 1)) / cols, ph = (ah - gap * (rows + 1)) / rows;
     for (let i = 0; i < ROOMS.length; i++) {
@@ -2338,7 +2390,12 @@ const Doom = (() => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.save();
       ctx.translate(x + sx * .4, y + sy * .4); ctx.beginPath(); ctx.rect(0, 0, pw, ph); ctx.clip(); ctx.globalAlpha = 1;
       const lt = st - i * .13 * k;
-      if (ROOMS[i].live) drawLive(pw, ph, lt, u); else drawRoom(pw, ph, lt, ROOMS[i], i);
+      if (rSrc) {
+        const sc = Math.max(pw / cw, ph / ch), dw = cw * sc, dh = ch * sc;
+        ctx.drawImage(rSrc, (i % 3) * cw, Math.floor(i / 3) * ch, cw, ch, (pw - dw) / 2, (ph - dh) / 2, dw, dh);
+        drawRoomOverlay(pw, ph, lt, u, ROOMS[i], i);
+      } else if (ROOMS[i].live) drawLive(pw, ph, lt, u);
+      else drawRoom(pw, ph, lt, ROOMS[i], i);
       ctx.globalCompositeOperation = 'source-over';
       if (ap < 1) { ctx.fillStyle = `rgba(255,255,255,${(1 - ap) * .7})`; ctx.fillRect(0, 0, pw, ph); }
       const vg = ctx.createRadialGradient(pw / 2, ph / 2, Math.min(pw, ph) * .3, pw / 2, ph / 2, Math.max(pw, ph) * .75);
@@ -2486,38 +2543,85 @@ const Doom = (() => {
   function shotAfter(st) {
     const seg = 1.9 * k, n = Math.floor(st / seg);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const av = clipsOn && clips.after;
+    let aSrc = null, vw = 1280, vh = 704;
+    if (av) {
+      const vt = Math.min(9.42, .05 + st / k), rate = 1 / k;
+      if (clipNow && clipNow !== av) clipNow.pause();
+      clipNow = av;
+      if (Math.abs(av.playbackRate - rate) > .01) av.playbackRate = rate;
+      if (av.paused || av.ended) { if (Math.abs(av.currentTime - vt) > .06) av.currentTime = vt; if (vt < 9.4) av.play().catch(() => {}); }
+      else if (Math.abs(av.currentTime - vt) > .22) av.currentTime = vt;
+      vw = av.videoWidth || 1280; vh = av.videoHeight || 704;
+      if (av.readyState >= 2) {
+        if (!clipLast) clipLast = new Map();
+        let lc = clipLast.get(av);
+        if (!lc) { lc = document.createElement('canvas'); lc.width = 640; lc.height = 352; clipLast.set(av, lc); }
+        lc.getContext('2d').drawImage(av, 0, 0, 640, 352);
+        aSrc = av;
+      } else if (clipLast && clipLast.get(av)) { aSrc = clipLast.get(av); vw = 640; vh = 352; }
+      root.dataset.clip = 'after';
+    }
     if (n < 4) {
       if (n !== afterSeg) { afterSeg = n; flash = .35; flashRGB = '255,255,255'; Sound.swoosh(.45, .6); Sound.braam(.32); }
       const t = (st - n * seg) / k;
-      ctx.save(); ctx.translate(sx * .3, sy * .3); SCENES[n](w, h, t); ctx.restore();
-      tlCard(ctx, w, h, TL[n], t);
+      if (aSrc) {
+        const sc = Math.max(w / vw, h / vh) * 1.04, dw = vw * sc, dh = vh * sc;
+        ctx.drawImage(aSrc, (w - dw) / 2 + sx * .3, (h - dh) / 2 + sy * .3, dw, dh);
+        const bangPos = [[.46, .28], [.44, .26], [.48, .28], [.38, .26]][n];
+        bang(ctx, w * bangPos[0], h * bangPos[1], M * .13, t - .45);
+        if (n === 2) {
+          const fs = Math.max(11, M * .042); ctx.font = `700 ${fs}px ui-monospace,Menlo,Consolas,monospace`; ctx.textBaseline = 'top';
+          ctx.fillStyle = `rgba(120,255,140,${.6 + .4 * Math.sin(t * 12)})`; ctx.fillText('SIGNAL LOST · EARTH', w * .58, h * .71);
+        }
+        tlCard(ctx, w, h, TL[n], t);
+        bubble(ctx, TL[n].line, w * .5, h * .81, Math.max(11, M * .06), c01((t - .5) * 5), w * .94);
+      } else {
+        ctx.save(); ctx.translate(sx * .3, sy * .3); SCENES[n](w, h, t); ctx.restore();
+        tlCard(ctx, w, h, TL[n], t);
+      }
     } else {
       if (afterSeg !== 4) { afterSeg = 4; flash = .3; Sound.static(.3); }
       const t = (st - 4 * seg) / k, gap = 4, top = h * .1, ah = h * .8, pw = (w - gap * 3) / 2, ph = (ah - gap * 3) / 2;
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      const cw = vw / 2, ch = vh / 2;
       for (let i = 0; i < 4; i++) {
         const x = gap + (i % 2) * (pw + gap), y = top + gap + Math.floor(i / 2) * (ph + gap), ap = c01((t - i * .05) / .12);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.save(); ctx.translate(x, y); ctx.beginPath(); ctx.rect(0, 0, pw, ph); ctx.clip();
-        ctx.globalAlpha = 1; SCENES[i](pw, ph, 1.9 + t); tlCard(ctx, pw, ph, TL[i], 2);
+        ctx.globalAlpha = 1;
+        if (aSrc) {
+          const sc = Math.max(pw / cw, ph / ch), dw = cw * sc, dh = ch * sc;
+          ctx.drawImage(aSrc, (i % 2) * cw, Math.floor(i / 2) * ch, cw, ch, (pw - dw) / 2, (ph - dh) / 2, dw, dh);
+          tlCard(ctx, pw, ph, TL[i], 2);
+          bubble(ctx, TL[i].line, pw * .5, ph * .85, Math.max(10, Math.min(pw, ph) * .058), 1, pw * .94);
+        } else {
+          SCENES[i](pw, ph, 1.9 + t); tlCard(ctx, pw, ph, TL[i], 2);
+        }
         if (ap < 1) { ctx.fillStyle = `rgba(0,0,0,${1 - ap})`; ctx.fillRect(0, 0, pw, ph); }
         ctx.restore();
+        ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, pw - 1, ph - 1);
       }
     }
   }
 
   /* ---- AI 영상 컷 ----
-     대기권 진입·학교 폭발·지구 붕괴는 이 PC에서 AI(첫 그림 FLUX.2 klein·Z-Image → 영상 Wan 2.2)로 뽑은 5초짜리 영상을 쓴다.
+     심우주·궤도 추적·6분할 상황실·대기권 진입·학교 폭발·지구 충돌·지구 붕괴·4타임라인 결말까지 전 컷을
+     이 PC에서 AI(FLUX.2 klein·Z-Image·Wan 2.2 + 시네마틱 다중 레이어 합성)로 만든 고화질 영상으로 재생한다.
      영상은 doom 폴더에 따로 두고 지구 멸망 공을 켰을 때만 받는다. 못 받으면(파일 하나만 들고 다닐 때 등) 코드로 그린 장면이 나온다.
      화면 시간 T는 녹음 소리에 맞춰 가므로, 영상도 T에서 계산한 시각을 따라가게 한다(0.2초 넘게 벌어지면 맞춤). */
-  const CLIP_SRC = { entry: 'doom/entry.mp4', school: 'doom/school.mp4', shatter: 'doom/shatter.mp4' };
+  const CLIP_SRC = { space: 'doom/space.mp4', rooms: 'doom/rooms.mp4', entry: 'doom/entry.mp4', school: 'doom/school.mp4', shatter: 'doom/shatter.mp4', after: 'doom/after.mp4' };
   // 컷 이름: [영상, 영상 시작초, 끝초, 확대 처음, 확대 끝, 가운데 둘 곳 x, y(0~1)]
   const CLIP_PLAN = {
+    deep: ['space', .05, 2.5, 1, 1.05, .5, .5],
+    track: ['space', 2.62, 4.35, 1, 1.06, .52, .48],
     limb: ['entry', .6, 2.9, 1, 1.08, .5, .5],
     face: ['entry', 2.9, 3.5, 1.6, 1.75, .6, .42],      // 같은 영상을 운석 쪽으로 크게 당겨 클로즈업처럼
     eye: ['entry', 3.5, 5, 1.12, 1.28, .6, .5],
     school: ['school', .1, 1.5, 1, 1.06, .5, .45],
+    impact: ['space', 4.45, 5.9, 1, 1.08, .5, .5],
     boom: ['school', 1.75, 4.75, 1.04, 1.12, .45, .55],
-    shatter: ['shatter', .2, 5, 1, 1.1, .5, .45]
+    shatter: ['shatter', .2, 5, 1, 1.1, .5, .45],
+    final: ['shatter', 3.2, 4.95, 1.04, 1.12, .5, .45]
   };
   const clips = {};
   let clipsLoading = null, clipNow = null, clipsOn = false, clipLast = null;
@@ -2553,7 +2657,10 @@ const Doom = (() => {
     return v ? { p, v } : null;
   }
   function clipPrep(sh) {   // 다음 컷이 영상이면 미리 그 시각에 맞춰 둔다(컷이 바뀔 때 멈칫하지 않게)
-    const c = sh && clipFor(sh.name), now = shots[si] && clipFor(shots[si].name);
+    if (!sh || !clipsOn) return;
+    if (sh.name === 'split' && clips.rooms && clipNow !== clips.rooms) { clips.rooms.pause(); clips.rooms.currentTime = .05; return; }
+    if (sh.name === 'after' && clips.after && clipNow !== clips.after) { clips.after.pause(); clips.after.currentTime = .05; return; }
+    const c = clipFor(sh.name), now = shots[si] && clipFor(shots[si].name);
     if (!c || c.v === clipNow || (now && now.v === c.v)) return;   // 지금 컷이 같은 영상을 이어 쓰면 건드리지 않는다
     c.v.pause(); c.v.currentTime = c.p[1];
   }
@@ -2565,8 +2672,8 @@ const Doom = (() => {
     const c = clipFor(name);
     if (!c) { if (clipNow) { clipNow.pause(); clipNow = null; } return false; }
     const { p, v } = c, slow = name === 'shatter';
-    const wt = slow ? sloMo(st) : st, wd = slow ? sloMo(dur) : dur, f = c01(wt / wd);
-    const t = p[1] + (p[2] - p[1]) * f, rate = (p[2] - p[1]) / wd;
+    const wt = slow ? sloMo(st) : st, wd = name === 'final' ? 8 * k : (slow ? sloMo(dur) : dur), f = c01(wt / wd);
+    const t = p[1] + (p[2] - p[1]) * f, rate = Math.max(.15, (p[2] - p[1]) / wd);
     if (clipNow && clipNow !== v) clipNow.pause();
     clipNow = v;
     if (Math.abs(v.playbackRate - rate) > .01) v.playbackRate = rate;
@@ -2585,12 +2692,49 @@ const Doom = (() => {
     const x = Math.min(0, Math.max(w - dw, w / 2 - p[5] * dw + sx)), y = Math.min(0, Math.max(h - dh, h / 2 - p[6] * dh + sy));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.drawImage(src, x, y, dw, dh);
-    // 흔들림·번쩍임은 코드 장면과 같은 박자로
+    // 영상 위에 실시간 시네마틱 HUD·불똥·충격파 레이어를 얹어 현장감을 극대화
+    if (name === 'deep') {
+      drawFlare(w * .05, h * .08, M * .5, .45);
+      if (!lite && Math.random() < .65) {
+        const a = rnd(0, 6.3), r = rnd(.12, .65) * M;
+        emit({ x: w * .38 + Math.cos(a) * r, y: h * .46 + Math.sin(a) * r, vx: Math.cos(a) * M * rnd(.5, 1.3), vy: Math.sin(a) * M * rnd(.5, 1.3), size: rnd(2.5, 5.5), life: rnd(.4, .8), kind: 'dust', drag: 0 });
+      }
+      drawParts();
+    }
+    if (name === 'track') {
+      shake = Math.max(shake, u * u * .28);
+      const ipx = w * .45, ipy = h * .52, pulse = .5 + .5 * Math.sin(T * 9), rr2 = M * .065;
+      ctx.save(); ctx.translate(ipx, ipy); ctx.rotate(T * 1.4);
+      ctx.strokeStyle = `rgba(255,60,75,${.6 + .38 * pulse})`; ctx.lineWidth = 1.8; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.arc(0, 0, rr2 * (1 + .18 * pulse), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.moveTo(Math.cos(a) * rr2 * .45, Math.sin(a) * rr2 * .45); ctx.lineTo(Math.cos(a) * rr2 * 1.45, Math.sin(a) * rr2 * 1.45); } ctx.stroke();
+      ctx.restore();
+      const px = w * (.74 - .26 * u), py = h * (.24 + .25 * u);
+      reticle(px, py, Math.max(22, M * .055), ['UNKNOWN OBJECT', Math.round((1 - u) * 120000 + 2000).toLocaleString() + ' km', 'TARGET: SEOUL, KR']);
+    }
+    if (name === 'limb' || name === 'face' || name === 'eye') {
+      if (!lite) for (let i = 0; i < (name === 'face' ? 3 : 2); i++) {
+        emit({ x: w * (.58 - .12 * u) + rnd(-.06, .06) * M, y: h * (.42 + .14 * u) + rnd(-.06, .06) * M, vx: M * rnd(.35, 1.3), vy: -M * rnd(.25, 1.0), size: M * rnd(.012, .032), life: rnd(.22, .5), kind: 'spark', drag: .4 });
+      }
+      drawParts();
+    }
     if (name === 'limb') shake = Math.max(shake, .12 + .3 * u);
-    if (name === 'face') shake = Math.max(shake, .6);
+    if (name === 'face') shake = Math.max(shake, .65);
     if (name === 'eye') { shake = Math.max(shake, .5 + .6 * u); const wu = c01((u - .65) / .35); flash = Math.max(flash, wu * wu * .9); flashRGB = '255,240,215'; }
-    if (name === 'school') { shake = Math.max(shake, .15 + .6 * u); const wu = c01((u - .82) / .18); flash = Math.max(flash, wu * wu * .95); flashRGB = '255,244,225'; }
-    if (name === 'boom') shake = Math.max(shake, 1 - u * .5);
+    if (name === 'school') {
+      shake = Math.max(shake, .15 + .6 * u);
+      if (u < .82) reticle(w * .5, h * .54, Math.max(20, M * .055), ['GROUND ZERO · 창동중', Math.round((1 - u) * 1800 + 12) + ' m']);
+      const wu = c01((u - .82) / .18); flash = Math.max(flash, wu * wu * .95); flashRGB = '255,244,225';
+    }
+    if (name === 'impact') { shake = Math.max(shake, 1.1 - u * .4); drawParts(); }
+    if (name === 'boom') { shake = Math.max(shake, 1 - u * .5); drawParts(); }
+    if (name === 'shatter') { drawParts(); }
+    if (name === 'final') {
+      if (!lite && Math.random() < .45) {
+        emit({ x: w * .5 + rnd(-.45, .45) * w, y: h * .55 + rnd(-.35, .35) * h, vx: rnd(-.08, .08) * M, vy: rnd(-.14, -.02) * M, size: M * rnd(.01, .028), life: rnd(1.2, 2.6), kind: 'spark', drag: .2 });
+      }
+      drawParts();
+    }
     root.dataset.clip = p[0];
     return true;
   }
